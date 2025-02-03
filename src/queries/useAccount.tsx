@@ -29,7 +29,7 @@ export const useGetAccountList = (
   queryParams: GetAccountListQueryParamsType
 ) => {
   return useQuery({
-    queryKey: ["accounts", queryParams],
+    queryKey: ["accounts"],
     queryFn: () => accountApiRequest.list(queryParams),
   });
 };

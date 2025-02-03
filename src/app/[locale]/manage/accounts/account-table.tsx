@@ -15,12 +15,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -40,6 +53,7 @@ import {
   AccountListResType,
   AccountType,
 } from "@/schemaValidations/account.schema";
+import { RoleType } from "@/types/jwt.types";
 import { TrashIcon } from "@radix-ui/react-icons";
 import {
   ColumnDef,
@@ -54,6 +68,8 @@ import {
   ArrowDownIcon,
   ArrowDownUpIcon,
   ArrowUpIcon,
+  Check,
+  FilterIcon,
   PencilIcon,
   SearchIcon,
   XIcon,
@@ -302,6 +318,20 @@ export default function AccountTable() {
       },
     },
   ];
+  const frameworks = [
+    {
+      value: Role.Employee,
+      label: Role.Employee,
+    },
+    {
+      value: Role.Owner,
+      label: Role.Owner,
+    },
+    {
+      value: Role.Guest,
+      label: Role.Guest,
+    },
+  ];
   const table = useReactTable({
     data,
     columns,
@@ -320,7 +350,8 @@ export default function AccountTable() {
   const handleOnChangeSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
   };
-
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState<RoleType[]>([Role.Employee]);
   return (
     <AccountTableContext.Provider
       value={{
@@ -340,16 +371,59 @@ export default function AccountTable() {
           employeeDelete={employeeDelete}
           setEmployeeDelete={setEmployeeDelete}
         />
-
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-2 my-2">
-          <SearchIcon className="h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Search"
-            defaultValue={query.search as string}
-            onChange={handleOnChangeSearch}
-          />
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2 rounded-lg border px-4 py-2 my-2 w-[400px]">
+            <SearchIcon className="h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search"
+              defaultValue={query.search as string}
+              onChange={handleOnChangeSearch}
+            />
+          </div>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" role="combobox" aria-expanded={open}>
+                <FilterIcon className="h-4 w-4 mr-2" />
+                Role
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="Search role..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No role found.</CommandEmpty>
+                  <CommandGroup>
+                    {frameworks.map((framework) => (
+                      <CommandItem
+                        key={framework.value}
+                        value={framework.value}
+                        onSelect={(currentValue) => {
+                          setValue(
+                            value.includes(currentValue as RoleType)
+                              ? value.filter((v) => v !== currentValue)
+                              : [...value, currentValue as RoleType]
+                          );
+                        }}
+                      >
+                        {framework.label}
+                        <Check
+                          className={cn(
+                            "ml-auto",
+                            value.includes(framework.value)
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
