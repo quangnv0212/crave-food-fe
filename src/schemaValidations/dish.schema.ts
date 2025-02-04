@@ -17,7 +17,28 @@ export const DishListParams = z.object({
   sortBy: z.enum(["name"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   search: z.string().optional(),
+  status: z.enum(DishStatusValues).optional(),
+  fromPrice: z.coerce.number().optional(),
+  toPrice: z.coerce.number().optional(),
 });
+
+export const FilterPrice = z
+  .object({
+    fromPrice: z.coerce.number().optional(),
+    toPrice: z.coerce.number().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.fromPrice === 0) return true;
+      return data.fromPrice && data.toPrice && data.fromPrice <= data.toPrice;
+    },
+    {
+      message: "From price must be less than to price",
+      path: ["toPrice"],
+    }
+  );
+
+export type FilterPriceType = z.TypeOf<typeof FilterPrice>;
 
 export type DishListParamsType = z.TypeOf<typeof DishListParams>;
 
@@ -27,7 +48,7 @@ export const DishSchema = z.object({
   price: z.coerce.number(),
   description: z.string(),
   image: z.string(),
-  status: z.enum(DishStatusValues),
+  status: z.any(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

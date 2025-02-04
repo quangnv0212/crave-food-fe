@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -22,6 +23,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -36,17 +47,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
-import { DishStatus, DishStatusType, DishStatusValues } from "@/constants/type";
+import { DishStatusType, DishStatusValues } from "@/constants/type";
 import { cn, formatCurrency, handleErrorApi } from "@/lib/utils";
 import { useDeleteDishMutation, useDishListQuery } from "@/queries/useDish";
-import { DishListResType } from "@/schemaValidations/dish.schema";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DishListResType,
+  FilterPrice,
+  FilterPriceType,
+} from "@/schemaValidations/dish.schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { TrashIcon } from "@radix-ui/react-icons";
 import {
   ColumnDef,
@@ -78,12 +87,11 @@ import {
   useQueryStates,
 } from "nuqs";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Form } from "@/components/ui/form";
 import { useDebouncedCallback } from "use-debounce";
 import { PaginationTableDish } from "./pagination";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-type DishItem = DishListResType["data"][0];
+type DishItem = DishListResType["data"]["items"][0];
 
 const DishTableContext = createContext<{
   setDishIdEdit: (value: number) => void;
@@ -161,27 +169,29 @@ export default function DishTable() {
       sortBy: parseAsStringLiteral(["name"]),
       sortOrder: parseAsStringLiteral(["asc", "desc"]),
       search: parseAsString,
+      status: parseAsStringLiteral(DishStatusValues),
+      fromPrice: parseAsInteger,
+      toPrice: parseAsInteger,
     },
     {
       history: "push",
     }
   );
+
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>();
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
-  const [priceRange, setPriceRange] = useState<{
-    min: number | undefined;
-    max: number | undefined;
-  }>({
-    min: undefined,
-    max: undefined,
-  });
+
   const dishListQuery = useDishListQuery({
     page: Number(query.page),
     limit: Number(query.limit),
     sortBy: (query.sortBy as "name") || undefined,
     sortOrder: (query.sortOrder as "asc" | "desc") || undefined,
-    search: query.search || undefined,
+    search: query.search as string,
+    status: query.status as DishStatusType,
+    fromPrice: query.fromPrice ?? undefined,
+    toPrice: query.toPrice ?? undefined,
   });
+
   const data = dishListQuery.data?.payload.data.items ?? [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -356,11 +366,18 @@ export default function DishTable() {
   });
 
   useEffect(() => {
-    table.setPagination({
-      pageIndex,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table, pageIndex]);
+    dishListQuery.refetch();
+  }, [
+    query.search,
+    query.status,
+    query.sortBy,
+    query.sortOrder,
+    query.fromPrice,
+    query.toPrice,
+    query.page,
+    query.limit,
+  ]);
+
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setQuery({ search: value || null });
   }, 500);
@@ -368,7 +385,30 @@ export default function DishTable() {
     debouncedSearch(e.target.value);
   };
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState<DishStatusType[]>([DishStatus.Available]);
+  const form = useForm<FilterPriceType>({
+    resolver: zodResolver(FilterPrice),
+  });
+  const onSubmit = (data: FilterPriceType) => {
+    setQuery((prev) => ({
+      ...prev,
+      fromPrice: data.fromPrice,
+      toPrice: data.toPrice,
+      page: 1,
+    }));
+  };
+  const resetFilterPrice = () => {
+    setQuery((prev) => ({
+      ...prev,
+      fromPrice: null,
+      toPrice: null,
+      page: 1,
+    }));
+    form.reset({
+      fromPrice: undefined,
+      toPrice: undefined,
+    });
+  };
+
   return (
     <DishTableContext.Provider
       value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}
@@ -438,6 +478,16 @@ export default function DishTable() {
                 <Button variant="ghost" role="combobox" aria-expanded={open}>
                   <FilterIcon className="h-4 w-4 mr-2" />
                   Status
+                  {query.status && (
+                    <XIcon
+                      className="ml-2 h-4 w-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setQuery({ status: null });
+                        setOpen(false);
+                      }}
+                    />
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
@@ -454,18 +504,18 @@ export default function DishTable() {
                           key={status}
                           value={status}
                           onSelect={(currentValue) => {
-                            setValue(
-                              value.includes(currentValue as DishStatusType)
-                                ? value.filter((v) => v !== currentValue)
-                                : [...value, currentValue as DishStatusType]
-                            );
+                            setQuery({
+                              ...query,
+                              status: currentValue as DishStatusType,
+                            });
+                            setOpen(false);
                           }}
                         >
                           {status}
                           <Check
                             className={cn(
                               "ml-auto",
-                              value.includes(status)
+                              query.status?.includes(status)
                                 ? "opacity-100"
                                 : "opacity-0"
                             )}
@@ -482,61 +532,79 @@ export default function DishTable() {
                 <Button variant="ghost" role="combobox">
                   <FilterIcon className="h-4 w-4 mr-2" />
                   Price Range
+                  {query.fromPrice && query.toPrice && (
+                    <XIcon
+                      className="ml-2 h-4 w-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        resetFilterPrice();
+                      }}
+                    />
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Min Price</Label>
-                    <Input
-                      type="number"
-                      placeholder="Min price"
-                      value={priceRange.min ?? ""}
-                      onChange={(e) =>
-                        setPriceRange((prev) => ({
-                          ...prev,
-                          min: e.target.value
-                            ? Number(e.target.value)
-                            : undefined,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Max Price</Label>
-                    <Input
-                      type="number"
-                      placeholder="Max price"
-                      value={priceRange.max ?? ""}
-                      onChange={(e) =>
-                        setPriceRange((prev) => ({
-                          ...prev,
-                          max: e.target.value
-                            ? Number(e.target.value)
-                            : undefined,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="flex justify-between">
+                <Form {...form}>
+                  <form
+                    noValidate
+                    className="grid auto-rows-max items-start gap-4 md:gap-8"
+                    id="filter-price-form"
+                    onSubmit={form.handleSubmit(onSubmit, (e) => {
+                      console.log(e);
+                    })}
+                  >
+                    <div className="grid gap-4 py-4">
+                      <FormField
+                        control={form.control}
+                        name="fromPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                              <Label htmlFor="fromPrice">From price</Label>
+                              <div className="col-span-3 w-full space-y-2">
+                                <Input
+                                  id="fromPrice"
+                                  className="w-full"
+                                  {...field}
+                                  placeholder="From price"
+                                />
+                                <FormMessage />
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="toPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                              <Label htmlFor="toPrice">To price</Label>
+                              <div className="col-span-3 w-full space-y-2">
+                                <Input
+                                  placeholder="To price"
+                                  id="toPrice"
+                                  className="w-full"
+                                  {...field}
+                                  type="number"
+                                />
+                                <FormMessage />
+                              </div>{" "}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <Button
-                      variant="outline"
-                      onClick={() => {
-                        setPriceRange({ min: undefined, max: undefined });
-                        table.getColumn("price")?.setFilterValue(undefined);
-                      }}
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        table.getColumn("price")?.setFilterValue(priceRange);
-                      }}
+                      type="submit"
+                      className="w-full"
+                      form="filter-price-form"
                     >
                       Apply
                     </Button>
-                  </div>
-                </div>
+                  </form>
+                </Form>
               </PopoverContent>
             </Popover>
           </div>
@@ -601,3 +669,14 @@ export default function DishTable() {
     </DishTableContext.Provider>
   );
 }
+
+export type DishListParamsType = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+  status?: DishStatusType[];
+  fromPrice?: number;
+  toPrice?: number;
+};

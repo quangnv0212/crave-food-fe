@@ -5,10 +5,10 @@ import {
 } from "@/schemaValidations/dish.schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useDishListQuery = (queryParams: DishListParamsType) => {
+export const useDishListQuery = (params: DishListParamsType) => {
   return useQuery({
     queryKey: ["dishes"],
-    queryFn: () => dishApiRequest.list(queryParams),
+    queryFn: () => dishApiRequest.list(params),
   });
 };
 
