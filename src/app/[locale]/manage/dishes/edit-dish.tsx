@@ -1,4 +1,6 @@
 "use client";
+import revalidateApiRequest from "@/apiRequests/revalidate";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,12 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -21,8 +17,9 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getVietnameseDishStatus, handleErrorApi } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -30,16 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
+import { DishStatus, DishStatusValues } from "@/constants/type";
+import { handleErrorApi } from "@/lib/utils";
+import { useGetDishQuery, useUpdateDishMutation } from "@/queries/useDish";
+import { useUploadMediaMutation } from "@/queries/useMedia";
 import {
   UpdateDishBody,
   UpdateDishBodyType,
 } from "@/schemaValidations/dish.schema";
-import { DishStatus, DishStatusValues } from "@/constants/type";
-import { Textarea } from "@/components/ui/textarea";
-import { useUploadMediaMutation } from "@/queries/useMedia";
-import { useGetDishQuery, useUpdateDishMutation } from "@/queries/useDish";
-import { toast } from "@/components/ui/use-toast";
-import revalidateApiRequest from "@/apiRequests/revalidate";
+import { zodResolver } from "@hookform/resolvers/zod";
+import DOMPurify from "dompurify";
+import { Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 
 export default function EditDish({
   id,
@@ -81,7 +82,7 @@ export default function EditDish({
       form.reset({
         name,
         image: image ?? undefined,
-        description,
+        description: DOMPurify.sanitize(description),
         price,
         status,
       });
@@ -230,14 +231,20 @@ export default function EditDish({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                    <div className="grid grid-cols-4 items-start justify-items-start gap-4">
                       <Label htmlFor="description">Description</Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Textarea
-                          id="description"
-                          className="w-full"
-                          {...field}
-                        />
+                        {data ? (
+                          <RichTextEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            className="min-h-[200px]"
+                          />
+                        ) : (
+                          <div className="min-h-[200px] flex items-center justify-center">
+                            Loading...
+                          </div>
+                        )}
                         <FormMessage />
                       </div>
                     </div>

@@ -1,3 +1,4 @@
+import AutoPagination from "@/components/auto-pagination";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -6,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -14,9 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import AutoPagination from "@/components/auto-pagination";
+import { DishStatus } from "@/constants/type";
+import { formatCurrency, simpleMatchText } from "@/lib/utils";
+import { useDishListQuery } from "@/queries/useDish";
 import { DishListResType } from "@/schemaValidations/dish.schema";
-import { useEffect, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -29,21 +32,15 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  formatCurrency,
-  getVietnameseDishStatus,
-  simpleMatchText,
-} from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { useDishListQuery } from "@/queries/useDish";
+import { useEffect, useState } from "react";
 
 type DishItem = DishListResType["data"][0];
 
 export const columns: ColumnDef<DishItem>[] = [
   {
     id: "dishName",
-    header: "Món ăn",
+    header: "Dish",
     cell: ({ row }) => (
       <div className="flex items-center space-x-4">
         <Image
@@ -63,17 +60,15 @@ export const columns: ColumnDef<DishItem>[] = [
   },
   {
     accessorKey: "price",
-    header: "Giá cả",
+    header: "Price",
     cell: ({ row }) => (
       <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>
     ),
   },
   {
     accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => (
-      <div>{getVietnameseDishStatus(row.getValue("status"))}</div>
-    ),
+    header: "Status",
+    cell: ({ row }) => <div>{row.getValue("status")}</div>,
   },
 ];
 
@@ -84,8 +79,12 @@ export function DishesDialog({
   onChoose: (dish: DishItem) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const dishListQuery = useDishListQuery();
-  const data = dishListQuery.data?.payload.data ?? [];
+  const dishListQuery = useDishListQuery({
+    page: 1,
+    limit: 1000,
+    status: DishStatus.Available,
+  });
+  const data = dishListQuery.data?.payload.data.items ?? [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -132,17 +131,17 @@ export function DishesDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Thay đổi</Button>
+        <Button variant="outline">Change</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-full overflow-auto">
         <DialogHeader>
-          <DialogTitle>Chọn món ăn</DialogTitle>
+          <DialogTitle>Select a dish</DialogTitle>
         </DialogHeader>
         <div>
           <div className="w-full">
             <div className="flex items-center py-4">
               <Input
-                placeholder="Lọc tên"
+                placeholder="Filter by name"
                 value={
                   (table.getColumn("dishName")?.getFilterValue() as string) ??
                   ""
@@ -209,9 +208,9 @@ export function DishesDialog({
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="text-xs text-muted-foreground py-4 flex-1 ">
-                Hiển thị{" "}
-                <strong>{table.getPaginationRowModel().rows.length}</strong>{" "}
-                trong <strong>{data.length}</strong> kết quả
+                Showing{" "}
+                <strong>{table.getPaginationRowModel().rows.length}</strong> out
+                of <strong>{data.length}</strong> results
               </div>
               <div>
                 <AutoPagination

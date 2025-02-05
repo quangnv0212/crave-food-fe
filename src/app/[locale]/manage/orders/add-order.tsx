@@ -32,6 +32,7 @@ import { useDishListQuery } from "@/queries/useDish";
 import { useCreateOrderMutation } from "@/queries/useOrder";
 import { useCreateGuestMutation } from "@/queries/useAccount";
 import { toast } from "@/components/ui/use-toast";
+import DOMPurify from "dompurify";
 
 export default function AddOrder() {
   const [open, setOpen] = useState(false);
@@ -244,7 +245,12 @@ export default function AddOrder() {
               </div>
               <div className="space-y-1">
                 <h3 className="text-sm">{dish.name}</h3>
-                <p className="text-xs">{dish.description}</p>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(dish.description),
+                  }}
+                  className="whitespace-pre-line"
+                />
                 <p className="text-xs font-semibold">
                   {formatCurrency(dish.price)}
                 </p>

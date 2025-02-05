@@ -88,11 +88,12 @@ export default function AddEmployee() {
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild className="my-2">
-        <Button size="lg" className="h-7 gap-1 w-full p-2">
+        <Button
+          size="lg"
+          className="gap-4 w-full p-4 text-lg font-semibold uppercase"
+        >
           <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap uppercase">
-            Create account
-          </span>
+          Create account
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-screen overflow-auto">

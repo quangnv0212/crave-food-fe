@@ -77,7 +77,7 @@ export default function OrderStatics({
           {selectedServingGuest && (
             <DialogHeader>
               <DialogTitle>
-                Khách đang ngồi tại bàn {selectedTableNumber}
+                Customers are using table {selectedTableNumber}
               </DialogTitle>
             </DialogHeader>
           )}

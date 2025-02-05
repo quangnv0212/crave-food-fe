@@ -87,7 +87,6 @@ export default async function RootLayout(
                 disableTransitionOnChange
               >
                 {children}
-                <Footer />
                 <Toaster />
               </ThemeProvider>
             </AppProvider>

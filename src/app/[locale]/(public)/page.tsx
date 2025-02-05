@@ -7,6 +7,8 @@ import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
 import envConfig, { Locale } from "@/config";
 import { htmlToTextForDescription } from "@/lib/server-utils";
+import ReactMarkdown from "react-markdown";
+import Markdown from "react-markdown";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: Locale }>;
@@ -49,6 +51,7 @@ export default async function Home(props: {
   } catch (error) {
     return <div>Something went wrong</div>;
   }
+  const markdown = `Just a link: www.nasa.gov.`;
   return (
     <div className="w-full space-y-4">
       <section className="relative z-10">
@@ -94,7 +97,7 @@ export default async function Home(props: {
               </div>
               <div className="space-y-1">
                 <h3 className="text-xl font-semibold">{dish.name}</h3>
-                <p className="">{dish.description}</p>
+                <div dangerouslySetInnerHTML={{ __html: dish.description }} />
                 <p className="font-semibold">{formatCurrency(dish.price)}</p>
               </div>
             </Link>

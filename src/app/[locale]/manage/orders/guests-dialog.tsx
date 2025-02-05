@@ -39,7 +39,7 @@ type GuestItem = GetListGuestsResType["data"][0];
 export const columns: ColumnDef<GuestItem>[] = [
   {
     accessorKey: "name",
-    header: "Tên",
+    header: "Name",
     cell: ({ row }) => (
       <div className="capitalize">
         {row.getValue("name")} | (#{row.original.id})

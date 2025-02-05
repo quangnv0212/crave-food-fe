@@ -110,11 +110,12 @@ export default function AddDish() {
       open={open}
     >
       <DialogTrigger asChild>
-        <Button size="lg" className="h-7 gap-1 w-full p-2">
+        <Button
+          size="lg"
+          className=" gap-1 w-full p-4 text-lg uppercase font-bold my-2"
+        >
           <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Create dish
-          </span>
+          Create dish
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-screen overflow-auto">
