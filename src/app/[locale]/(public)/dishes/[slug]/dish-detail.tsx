@@ -14,9 +14,7 @@ export default async function DishDetail({
       </div>
     );
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl lg:text-3xl font-semibold">{dish.name}</h1>
-      <div className="font-semibold">Giá: {formatCurrency(dish.price)}</div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-screen">
       <Image
         src={dish.image}
         width={700}
@@ -26,7 +24,11 @@ export default async function DishDetail({
         className="object-cover w-full h-full max-w-[1080px] max-h-[1080px] rounded-md"
         title={dish.name}
       />
-      <div dangerouslySetInnerHTML={{ __html: dish.description }} />
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl lg:text-3xl font-semibold">{dish.name}</h1>
+        <div className="font-semibold">Price: {formatCurrency(dish.price)}</div>
+        <div dangerouslySetInnerHTML={{ __html: dish.description }} />
+      </div>
     </div>
   );
 }

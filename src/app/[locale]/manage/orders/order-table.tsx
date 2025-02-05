@@ -200,7 +200,7 @@ export default function OrderTable() {
     function onNewOrder(data: GuestCreateOrdersResType["data"]) {
       const { guest } = data[0];
       toast({
-        description: `${guest?.name} tại bàn ${guest?.tableNumber} vừa đặt ${data.length} đơn`,
+        description: `${guest?.name} at table ${guest?.tableNumber} just created ${data.length} orders`,
       });
       refetch();
     }
@@ -208,7 +208,7 @@ export default function OrderTable() {
     function onPayment(data: PayGuestOrdersResType["data"]) {
       const { guest } = data[0];
       toast({
-        description: `${guest?.name} tại bàn ${guest?.tableNumber} thanh toán thành công ${data.length} đơn`,
+        description: `${guest?.name} at table ${guest?.tableNumber} just paid ${data.length} orders`,
       });
       refetch();
     }
