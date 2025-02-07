@@ -188,10 +188,10 @@ export default function AccountTable() {
       header: "Avatar",
       cell: ({ row }) => (
         <div>
-          <Avatar className="aspect-square rounded-md object-cover">
+          <Avatar className="rounded-md object-fit h-16 w-16">
             <AvatarImage src={row.getValue("avatar")} />
             <AvatarFallback className="rounded-none">
-              {row.original.name}
+              {row.original.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
         </div>

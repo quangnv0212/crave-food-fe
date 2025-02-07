@@ -1,14 +1,11 @@
 import dishApiRequest from "@/apiRequests/dish";
+import envConfig, { Locale } from "@/config";
+import { Link } from "@/i18n/routing";
+import { htmlToTextForDescription } from "@/lib/server-utils";
 import { formatCurrency, generateSlugUrl } from "@/lib/utils";
 import { DishListResType } from "@/schemaValidations/dish.schema";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import Image from "next/image";
-import { Link } from "@/i18n/routing";
-import { getTranslations } from "next-intl/server";
-import { setRequestLocale } from "next-intl/server";
-import envConfig, { Locale } from "@/config";
-import { htmlToTextForDescription } from "@/lib/server-utils";
-import ReactMarkdown from "react-markdown";
-import Markdown from "react-markdown";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: Locale }>;
